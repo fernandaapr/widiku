@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Surat Cinta 💌</title>
+<style>
+  :root{
+    --bg1:#ffe0ef; --bg2:#ff9ec9; --ink:#333; --pink:#ff5aa5; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:grid; place-items:center; overflow:hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background: radial-gradient(1200px 900px at 50% -200px, #ffffff40, transparent),
+                linear-gradient(135deg, var(--bg1), var(--bg2));
+    padding: 16px;
+  }
+
+  .stage{ width:min(780px, 92vw); text-align:center; position:relative; }
+
+  /* ENVELOPE (pure CSS + SVG) */
+  .envelope-wrap{ display:inline-block; perspective:1200px; }
+  .envelope{
+    width:min(320px, 70vw); height:220px; position:relative; cursor:pointer;
+    transform-style:preserve-3d; transition: transform .9s cubic-bezier(.2,.75,.2,1);
+  }
+  /* body */
+  .env-body{
+    position:absolute; inset:0; background:#ffc1d8; border-radius:18px;
+    box-shadow: 0 14px 40px #0000002a, inset 0 0 0 2px #ffffff80;
+  }
+  /* bottom flap (triangle) */
+  .env-bottom{
+    position:absolute; left:0; right:0; bottom:0; height:60%;
+    clip-path: polygon(0 0, 50% 100%, 100% 0); background:#ff9bbf;
+    filter: drop-shadow(0 -1px 0 #ffffff90);
+  }
+  /* side flaps */
+  .env-left,.env-right{
+    position:absolute; top:22%; width:50%; height:56%;
+    background:#ffb0cb;
+  }
+  .env-left{ left:0; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .env-right{ right:0; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+  /* top flap */
+  .env-top{
+    position:absolute; left:0; right:0; top:0; height:62%;
+    clip-path: polygon(0 0, 50% 100%, 100% 0); background:#ff77aa;
+    transform-origin:50% 0%;
+    transform: rotateX(0deg);
+    transition: transform .9s cubic-bezier(.2,.75,.2,1);
+    box-shadow: inset 0 -2px 0 #ffffff80;
+  }
+  /* label "Baca yaaa" */
+  .label{
+    position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+  }
+  .label span{
+    display:inline-block; padding:6px 14px; border-radius:999px;
+    background:#fff; color:#d4145a; font-weight:700; letter-spacing:.2px;
+    box-shadow:0 6px 18px #0000002a;
+  }
+
+  /* OPEN STATE */
+  .envelope.open .env-top{ transform: rotateX(-180deg); }
+  .envelope.open{ transform: translateY(-8px) scale(.98); cursor:default; }
+
+  /* LETTER CARD */
+  .card{
+    width:min(780px, 92vw);
+    margin: 22px auto 0;
+    background:#ffffffe6; border:1px solid #ffffff; border-radius:20px;
+    box-shadow:0 20px 60px #00000030;
+    padding:20px 18px; text-align:left; display:none;
+  }
+  .card.show{ display:block; animation: fadeIn .6s both; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+
+  .title{
+    text-align:center; margin:6px 0 12px; color:#d4145a;
+    font-size: clamp(22px, 5vw, 28px);
+  }
+  .line{
+    font-size: clamp(15px, 2.9vw, 18px);
+    line-height:1.9; margin: 10px 2px; opacity:.98;
+  }
+  .cursor{ display:inline-block; width:10px; animation: blink 1s steps(1,end) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  /* CTA text under envelope */
+  .hint{ margin-top:12px; color:#7a0e3a; font-weight:600 }
+
+  /* PETALS */
+  .petal{
+    position:fixed; top:-10vh; font-size:22px; opacity:.9;
+    animation: fall linear forwards;
+    user-select:none; pointer-events:none;
+  }
+  @keyframes fall{
+    to{ transform: translateY(120vh) rotate(360deg); opacity:0.8; }
+  }
+
+  /* tiny footer note */
+  .note{ text-align:center; opacity:.7; font-size:.8rem; margin-top:8px }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <!-- Envelope -->
+    <div class="envelope-wrap">
+      <div id="envelope" class="envelope" aria-label="Buka amplop">
+        <div class="env-body"></div>
+        <div class="env-left"></div>
+        <div class="env-right"></div>
+        <div class="env-bottom"></div>
+        <div class="env-top"></div>
+        <div class="label"><span>📫 Baca yaaa</span></div>
+      </div>
+    </div>
+    <div class="hint">Klik amplopnya 😉</div>
+
+    <!-- Letter -->
+    <div id="card" class="card" role="region" aria-live="polite">
+      <h2 class="title">Untuk Widi 💌</h2>
+      <div id="lines"></div>
+      <div class="note">(Jika musik belum terdengar, pastikan <code>music.mp3</code> ada di folder yang sama)</div>
+    </div>
+  </div>
+
+  <!-- AUDIO: letakkan file bebas hak cipta bernama music.mp3 di root repo -->
+  <audio id="bgm" preload="auto" loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+<script>
+  // ====== TEXT KAMU (per kalimat) ======
+  const sentences = [
+    "halloo sayangg aku mau cerita dikit boleh ya hehe...",
+    "aku suka semua tentang kamu, aku suka banget kalo kamu marahin aku, aku suka kalo kamu ingetin aku apapun itu, maafin aku kalo suka buat masalah, maaf gara gara aku jadi sering berantem, tapi masalah apapun yang terjadi jangan pernah berfikir buat pergi yaa?",
+    "aku tau ko aku salah, aku ga bisa ngertiin kamu, aku selalu berlebihan selalu ovt sama kamu, karena aku ga pernah sesayaang ini sama orang.",
+    "aku minta maaf blom bisa nepatin omongan aku sendiri tapi aku masih mau belajar banyak, pokoknya aku minta maaf lagi dan lagi sama kamu.",
+    "Kalo kamu lagi ada masalah cerita sama akuyaa? jangan pernah ngerasa kalo kamu sendirian karna ada aku disini, aku bakal bantu sebisa aku.",
+    "ohiya, aku baru sadar ternyata kalo aku bersyukur bisa sama kamu itu ternyata bikin aku makin seneng banget rasanya coba kamu rasain deh...",
+    "kamu ga perlu nanya lagi kalo aku sayang atau ngga sama kamu karna kamu udah pasti tau jawabannyaaaa, makasi udah selalu buat aku seneng dengan perhatian perhatian kecil yang kamu kasih, aku bener bener beruntung banget bisa sama kamu, ohiya aku harap kamu juga ngerasain hal yang sama yaaa, makaasii sayangg......💌"
+  ];
+
+  const envelope = document.getElementById('envelope');
+  const card = document.getElementById('card');
+  const linesBox = document.getElementById('lines');
+  const bgm = document.getElementById('bgm');
+
+  let opened = false;
+
+  function petal(){
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.textContent = Math.random() < .5 ? '🌸' : '🌷';
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.fontSize = (Math.random()*12 + 18) + 'px';
+    p.style.animationDuration = (Math.random()*3 + 4) + 's';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 8000);
+  }
+
+  function typeLine(text, onDone){
+    const line = document.createElement('div');
+    line.className = 'line';
+    const span = document.createElement('span');
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    cursor.textContent = '▌';
+    line.appendChild(span);
+    line.appendChild(cursor);
+    linesBox.appendChild(line);
+
+    let i=0;
+    const speed = 26; // ms per char
+    const tick = () => {
+      if(i < text.length){
+        span.textContent += text.charAt(i++);
+        setTimeout(tick, speed);
+      } else {
+        cursor.remove();
+        setTimeout(onDone, 900); // jeda antar kalimat
+      }
+    };
+    tick();
+  }
+
+  async function revealAll(){
+    // mainkan musik (allowed after user gesture)
+    try { await bgm.play(); } catch(e) {}
+    // hujan bunga
+    setInterval(petal, 300);
+    for(let i=0; i<10; i++) setTimeout(petal, i*140);
+
+    // tampilkan tiap kalimat
+    let idx = 0;
+    const next = () => {
+      if(idx >= sentences.length) return;
+      typeLine(sentences[idx++], next);
+    };
+    next();
+  }
+
+  envelope.addEventListener('click', () => {
+    if(opened) return;
+    opened = true;
+    envelope.classList.add('open');
+    setTimeout(() => {
+      card.classList.add('show');
+      revealAll();
+      // hapus label agar bersih
+      const label = envelope.querySelector('.label'); if(label) label.remove();
+    }, 800);
+  });
+</script>
+</body>
+</html>
